@@ -43,7 +43,7 @@ if (isset ($_REQUEST['joinSession']) && isset ($_REQUEST['sessionID'])
 
 // User Song Update Request
 if (isset ($_REQUEST['updateSong']) && isset ($_REQUEST['sessionID']) && isset ($_REQUEST['userID'])
-		&& isset ($_REQUEST['user']) && isset ($_REQUEST['selected_songID'])) {
+		&& isset ($_REQUEST['user']) && isset ($_REQUEST['selected_tubeID'])) {
 	if ($_REQUEST['updateSong'] = true) {
 		$tableName = $_REQUEST['sessionID'];
 	
@@ -51,7 +51,7 @@ if (isset ($_REQUEST['updateSong']) && isset ($_REQUEST['sessionID']) && isset (
 		$user['userid'] = $_REQUEST['userID'];
 		$user['user'] = $_REQUEST['user'];
 //		$user['ip'] = $_REQUEST['ip'];
-		$user['selected_songID'] = $_REQUEST['selected_userID'];
+		$user['selected_tubeID'] = $_REQUEST['selected_tubeID'];
 	
 		$relayTable->updateUser($user, $tableName);
 	}
@@ -67,7 +67,6 @@ if (isset ($_REQUEST['updateFeed']) && isset ($_REQUEST['sessionID']) && isset (
 		$master['userid'] = $_REQUEST['userID'];
 		$master['user'] = $_REQUEST['user'];
 //		$master['ip'] = $_REQUEST['ip'];
-		$master['selected_songID'] = $_REQUEST['selected_userID'];
 
 		$relayTable->updateFeed($master, $tableName);
 	}
