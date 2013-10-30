@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>DJ Relay Server API</title>
+</head>
+<body>
+<h1>DJ Relay Server API</h1>
+<p> All requests and responses to/from the server to be sent as JSON objects. </p>
+</h3>The following are currently supported commands:</h3>
+<p>
+<h3>1) Create Session</h3>
+<h4>Request Format:</h4>
+{"createSession": "true", "sessionID": "YOUR SESSION ID", "userID": "YOUR USER ID", "user": "YOUR USER"}<br>
+<h4>Server Response on success:</h4>
+{"dbCon": "true", "createTable": "true", "insertMaster": "true"}<br>
+</p>
+<p>
+<h3>2) Join Session</h3>
+<h4>Request Format:</h4>
+{"joinSession": "true", "sessionID": "YOUR SESSION ID", "userID": "YOUR USER ID", "user": "YOUR USER"}<br>
+<h4>Server Response on success:</h4>
+{"dbCon": "true", "insertUser": "true"}<br>
+</p>
+<p>
+<h3>3) User Song Update</h3>
+<h4>Request Format:</h4>
+{"updateSong": "true", "sessionID": "YOUR SESSION ID", "userID": "YOUR USER ID", "user": "YOUR USER", "selected_tubeID": "YOUR SELECTED TUBE ID"}<br>
+<h4>Server Response on success:</h4>
+{"dbCon": "true", "updateUser": "true"}<br>
+</p>
+<p>
+<h3>4) Update Feed</h3>
+<h4>Request Format:</h4>
+{"updateFeed": "true", "sessionID": "YOUR SESSION ID", "userID": "YOUR USER ID", "user": "YOUR USER"}<br>
+<h4>Server Response on success:</h4>
+{"dbCon": "true", "masterPresent": "true", "usersPresent": "true", "updateFeed": "true",<br>
+"selectedUser": {"userid": "user's id", "user": "user's name", "selected_tubeID": "user's selected tube ID", "selected_userID": "selected user's id"}}<br>
+</p>
+<p>
+<h3>5) Fetch Current Feed</h3>
+<h4>Request Format:</h4>
+{"fetchFeed": "true", "sessionID": "YOUR SESSION ID", "userID": "YOUR USER ID", "user": "YOUR USER"}<br>
+<h4>Server Response on success:</h4>
+{"dbCon": "true", "masterPresent": "true", "selectedUser": {"userid": "user's id", "user": "user's name", "selected_tubeID": "user's selected tube ID", "selected_userID": "selected user's id"}}<br>
+<strong>*Note: The selected_userID field in the 'selectedUser' object is only used in the master's record, and should be ignored when making this request</strong><br>
+</p>
+<p>
+<h3>6) User Log Out</h3>
+<h4>Request Format:</h4>
+{"userLogOut": "true", "sessionID": "YOUR SESSION ID", "userID": "YOUR USER ID", "user": "YOUR USER"}<br>
+<h4>Server Response on success:</h4>
+{"dbCon": "true", "updateUser": "true"}<br>
+</p>
+<p>
+<h3>7) Kill Session</h3>
+This request should be sent by master instead of user log out request, in order to also kill table allocation on server's database<br>
+<h4>Request Format:</h4>
+{"killSession": "true", "sessionID": "YOUR SESSION ID", "userID": "YOUR USER ID", "user": "YOUR USER"}<br>
+<h4>Server Response on success:</h4>
+{"dbCon": "true", "masterPresent": "true", "sessionKill": "true"}<br>
+</p>
+</body>
+</html>
