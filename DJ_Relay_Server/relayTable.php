@@ -228,7 +228,7 @@ class relayTable {
 		
 		// Next, randomly select next user and disallow current user to be selected again
 		// TODO - also don't allow user to be selected w/ no tube ID (e.g. check against NULL)
-		$sql = "SELECT * FROM `" . $tableName . "` WHERE userid != '$nxtSelected_userID'
+		$sql = "SELECT * FROM `" . $tableName . "` WHERE userid != '$nxtSelected_userID' AND selected_tubeID IS NOT NULL
 				ORDER BY RAND() LIMIT 1";
 		$res = mysqli_query ( $this->con, $sql );
 		
