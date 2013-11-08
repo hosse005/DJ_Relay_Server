@@ -5,8 +5,8 @@ function __autoload($relayTable) {
 }
 
 const hostIP = '127.0.0.1';
-const hostUser = 'root';
-const hostPw = 'N0tS0m1n1!';
+const hostUser = 'djadmin';
+const hostPw = 'gizmo';
 const hostDb = 'djRelay_db';
 
 $relayTable = new relayTable();
