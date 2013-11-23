@@ -36,6 +36,8 @@ class relayTable {
    	    ----------------------------------------------------------------- 
    	   |sessionKill   | boolean for session drop status                  |
    	    -----------------------------------------------------------------   
+   	   |status        | status for request, either OK or an error        |
+   	    ----------------------------------------------------------------- 
 	*/
 	public  $replyJSON;
 	
@@ -43,11 +45,11 @@ class relayTable {
 		$this->con = mysqli_connect ( hostIP, hostUser, hostPw, hostDb );
 		$this->replyJSON = array();
 		if (mysqli_connect_errno ()) {
-			//echo "Failed to connect to Database in class ", get_class ( $this ), "\n";
 			$this->replyJSON['dbCon'] = false;
-//			die ('db Connection Error');	// Maybe just allow script to proceed so client can process the error..
+			$this->replyJSON['status'] = 'dbConErr';
 		} else
 			$this->replyJSON['dbCon'] = true;
+			$this->replyJSON['status'] = 'OK';
 	}
 	
 	function table_exist($table){
@@ -62,6 +64,7 @@ class relayTable {
 	
 		if (!$res) {
 			$this->replyJSON['masterPresent'] = false;
+			$this->replyJSON['status'] = 'masterNotPresent';
 			return;
 		} else
 			$this->replyJSON['masterPresent'] = true;
@@ -76,6 +79,7 @@ class relayTable {
 		// First Check if table exists
 		if ($this->table_exist($tableName)) {
 			$this->replyJSON['sessionAlreadyExists'] = true;
+			$this->replyJSON['status'] = 'sessionAlreadyExists';
 			return;
 		}
 		
@@ -97,6 +101,7 @@ class relayTable {
 		} else {
 			//echo "Error creating '$this->tableName': " . mysqli_error ( $this->con );
 			$this->replyJSON['createTable'] = false;
+			$this->replyJSON['status'] = 'createTableErr';
 			return;
 		}
 		
@@ -116,19 +121,18 @@ class relayTable {
 		} else {
 			//echo "Error inserting master to '$this->tableName': " . mysqli_error ( $this->con );
 			$this->replyJSON['insertMaster'] = false;
+			$this->replyJSON['status'] = 'insertMasterErr';
 			return;
 		}
 	}
 
 	
 	function updateUser($user, $tableName) {
-		// TODO - need to decide if something w/ ip checking should be enforced
-		// Maybe this is separate check to ensure requesting user ip doesn't already exist in table
-		// For now, we just check user id..
 		
 		// First Check if table exists
 		if (!$this->table_exist($tableName)) {
 			$this->replyJSON['sessionNotFound'] = true;
+			$this->replyJSON['status'] = 'sessionNotFound';
 			return;
 		}
 		
@@ -146,6 +150,7 @@ class relayTable {
 			// Unfortunately, I have also written the client side code so..
 			if ($user['selected_tubeID'] == null){
 				$this->replyJSON['masterJoinError'] = true;
+				$this->replyJSON['status'] = 'masterJoinErr';
 				return;
 			}
 			
@@ -158,6 +163,7 @@ class relayTable {
 			} else {
 				//echo "Error updating user info to '$tableName': " . mysqli_error ( $this->con );
 				$this->replyJSON['updateUser'] = false;
+				$this->replyJSON['status'] = 'updateUserErr';
 				return;
 			}
 		} else {
@@ -168,11 +174,10 @@ class relayTable {
 			) ";
 			
 			if (mysqli_query ( $this->con, $sql )) {
-				//echo "'$tableName' INSERT command success";
 				$this->replyJSON['insertUser'] = true;
 			} else {
-				//echo "Error inserting user to '$tableName': " . mysqli_error ( $this->con );
 				$this->replyJSON['insertUser'] = false;
+				$this->replyJSON['status'] = 'insertUserErr';
 				return;
 			}
 		}
@@ -184,6 +189,7 @@ class relayTable {
 		// First check if session still exists
 		if (!$this->table_exist($tableName)) {
 			$this->replyJSON['sessionNotFound'] = true;
+			$this->replyJSON['status'] = 'sessionNotFound';
 			return;
 		}
 		
@@ -193,6 +199,7 @@ class relayTable {
 		
 		if (!$res) {
 			$this->replyJSON['masterPresent'] = false;
+			$this->replyJSON['status'] = 'masterNotPresent';
 			return;
 		} else
 			$this->replyJSON['masterPresent'] = true;
@@ -202,6 +209,7 @@ class relayTable {
 		// Only allow master of the session to make this call
 		if ($res['userid'] != $master['userid']){
 			$this->replyJSON['unauthorizedRequest'] = true;
+			$this->replyJSON['status'] = 'unauthorizedRequest';
 			return;
 		}
 		
@@ -213,7 +221,8 @@ class relayTable {
 //			    WHERE userid = '{$master['userid']}'";
 		$res = mysqli_query($this->con, $sql);
 		if (!$res){
-			$this->replyJSON['updateFeed'] = false;		
+			$this->replyJSON['updateFeed'] = false;
+			$this->replyJSON['status'] = 'updateFeedErr';
 			return;
 		}
 		// Now, grab this record and echo to master client
@@ -221,13 +230,13 @@ class relayTable {
 		$res = mysqli_query($this->con, $sql);
 		if (!$res) {
 			$this->replyJSON['updateFeed'] = false;	
+			$this->replyJSON['status'] = 'updateFeedErr';
 			return;
 		}
 		$row1 = mysqli_fetch_assoc($res);
 		$this->replyJSON['selectedUser'] = $row1;
 		
 		// Next, randomly select next user and disallow current user to be selected again
-		// TODO - also don't allow user to be selected w/ no tube ID (e.g. check against NULL)
 		$sql = "SELECT * FROM `" . $tableName . "` WHERE userid != '$nxtSelected_userID' AND selected_tubeID IS NOT NULL
 				ORDER BY RAND() LIMIT 1";
 		$res = mysqli_query ( $this->con, $sql );
@@ -235,8 +244,6 @@ class relayTable {
 		if (! mysqli_num_rows ( $res ) > 0) {
 			$this->replyJSON['usersPresent'] = false;
 			$row1 = array('userid' => $master['userid']);
-//			$row1 = json_encode($row1); 
-//			echo $row1;
 		} else {
 			$this->replyJSON['usersPresent'] = true;
 			$row1 = mysqli_fetch_assoc ( $res );
@@ -251,6 +258,7 @@ class relayTable {
 			$this->replyJSON['updateFeed'] = true;
 		} else {
 			$this->replyJSON['updateFeed'] = false;
+			$this->replyJSON['status'] = 'updateFeedErr';
 			return;
 		}
 		
@@ -266,6 +274,7 @@ class relayTable {
 		// First check if session still exists
 		if (!$this->table_exist($tableName)) {
 			$this->replyJSON['sessionNotFound'] = true;
+			$this->replyJSON['status'] = 'sessionNotFound';
 			return;
 		}
 		// Read currently selected tube ID		
@@ -273,8 +282,8 @@ class relayTable {
 		$res = mysqli_query($this->con, $sql);
 		
 		if (!$res) {
-			//echo "Error finding master for fetchCurrentFeed: " . mysqli_error($this->con). "<br>";
 			$this->replyJSON['masterPresent'] = false;
+			$this->replyJSON['status'] = 'masterNotPresent';
 			return;
 		} else
 			$this->replyJSON['masterPresent'] = true;
@@ -287,14 +296,12 @@ class relayTable {
 		$res = mysqli_query ( $this->con, $sql );		
 		
 		if (!$res) {
-			//echo "Error finding selected user! <br>";
 			// TODO - add some retry mechanism for this failure to get new userid
 		}
 		
 		$res = mysqli_fetch_assoc($res);
 		$this->selected_tubeID = $res['selected_tubeID'];
 		$this->replyJSON['selectedUser'] = $res;
-		//echo "<br>" . json_encode($this->replyJSON['selectedUser']) . "<br>";
 	}
 	
 	function userLogOut($user, $tableName) {
@@ -303,8 +310,8 @@ class relayTable {
 		$sql = "DELETE FROM `" . $tableName . "` WHERE userid = '{$user['userid']}'";
 		$res = mysqli_query($this->con, $sql);
 		if (!$res) {
-			//echo "'{$user['userid']}'" . " doesn't exist in table " . "'$tableName'";
 			$this->replyJSON['updateUser'] = false;
+			$this->replyJSON['status'] = 'updateUserErr';
 		} else
 			$this->replyJSON['updateUser'] = true;
 	}
@@ -315,38 +322,32 @@ class relayTable {
 		$res = mysqli_query($this->con, $sql);
 		
 		if (!$res) {
-			//echo "Error finding master for killSession command: " . mysqli_error($this->con). "<br>";
 			$this->replyJSON['masterPresent'] = false;
+			$this->replyJSON['status'] = 'masterNotPresent';
 			return;
 		} else
 			$this->replyJSON['masterPresent'] = true;
 		
 		$res = mysqli_fetch_assoc($res);
-		//echo "SQL master fetch = " .$res['userid'] . "<br>";
-		//echo "Master id = " .$master['userid'] . "<br>";
 		
 		if ($res['userid'] == $master['userid']) {
-			//echo "Howdy! <br>";
 			// Drop the session table
 			$sql = "DROP TABLE IF EXISTS `" . $tableName . "`";
 			$res = mysqli_query($this->con, $sql);			
 			if (!$res) {
-				//echo "Couldn't not drop `" . $tableName . "`";
 				$this->replyJSON['sessionKill'] = false;
+				$this->replyJSON['status'] = 'sessionKillErr';
 				return;
 			} else
 				$this->replyJSON['sessionKill'] = true;
 		} else {
 			echo "Only master can delete a session";
-			// TODO - anything else..
 			$this->replyJSON['sessionKill'] = false;
 		}
 	}
 		
 	function __destruct() {
-		//echo "Destroying  " . $this->tableName . " object " . "<br>";
 		$this->replyJSON = json_encode($this->replyJSON);
-		//echo "Value of replyJSON object = " . $this->replyJSON;
 		mysqli_close ( $this->con );
 	}
 }
